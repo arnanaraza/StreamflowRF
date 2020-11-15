@@ -6,7 +6,7 @@ shedVT <- function (SW, conv){
   # Load individual valuetables
   
   f.table <- read.csv(paste0(dataDir, '/sw_lcov_floss2.csv'))
-  st.table <- read.csv(paste0(dataDir, '/static.csv'))
+  st.table <- read.csv(paste0(dataDir, '/static.csv'), stringsAsFactors = F)
   c.table <- read.csv(paste0(dataDir, '/conversion1.csv'))
   w.table <- read.csv (paste0(dataDir, '/reg_weather1.csv'))
   s.table <- read.csv(paste0(dataDir, '/obs_data1.csv'))
@@ -20,7 +20,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 1
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 3}
   if (SW == 'aarb_n') {
     SW.no <- 8
@@ -28,7 +28,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 1
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 3}
   if (SW == 'abrb_s') {
     SW.no <- 59
@@ -36,7 +36,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 2
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1    }
   if (SW == 'arb_b')  { 
     SW.no <- 166
@@ -44,7 +44,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 3
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1}
   if (SW == 'arb_c')  { 
     SW.no <- 188
@@ -52,7 +52,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 3
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1}
   if (SW == 'crb_a') {
     SW.no <- 156
@@ -60,7 +60,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 4}
   if (SW == 'crb_be') {
     SW.no <- 150
@@ -68,7 +68,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 3}
   if (SW == 'crb_bu') {
     SW.no <- c(68,69,71,74,75,76,78,79,82,83,84,86,88,90,91,92,93,94,96,98,99,100,101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,138,137,141,143,144,145,147,148,149,150,151,152,153,154,155,156,157,158,159,160,163)
@@ -76,7 +76,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 3}  
   if (SW == 'crb_d') {
     SW.no <- c(163, 160, 159, 158, 157) 
@@ -84,7 +84,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 3}
   if (SW == 'crb_j') {
     SW.no <- c(137, 147, 139, 149, 143, 153, 151, 154, 157, 158, 159, 160, 163)
@@ -92,7 +92,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 4} 
   if (SW == 'crb_m') {
     SW.no <- c(135, 138, 144, 145, 146, 148, 152, 155, 150)
@@ -100,7 +100,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 1}
   if (SW == 'crb_p') {
     SW.no <- c(91, 92, 98, 99, 101, 102, 104, 110, 114, 119, 120, 126, 130, 132, 141)
@@ -108,7 +108,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 4}
   if (SW == 'crb_s') {
     SW.no <- c(62, 57, 50)
@@ -116,7 +116,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 3}
   if (SW == 'crb_t') {
     SW.no <- 52
@@ -124,7 +124,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 4
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 4}
   if (SW == 'crb_u') {
     SW.no <- c(94,96,100,103,105,106,107,108,111,112,113,115,116,117,118,121,122,123,124,125,127,128,129,131,133,134,135,136,137,138,139,143,144,145,147,149,150,151,152,153,154,155,156,157,158,159,160,163)
@@ -132,7 +132,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <-4
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 3}
   if (SW == 'mrb_s') {
     SW.no <- 242
@@ -140,7 +140,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 5
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1}
   if (SW == 'prb_a') {
     SW.no <- c(203, 204, 205,209,210,192, 218,167,168,170,185,186,187,189,190,191,193,194,195,196,198,201,202,206,207,208,211,212,213,214,215,216,217,225)
@@ -148,7 +148,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 6
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 1}
   if (SW == 'prb_b') {
     SW.no <- 189
@@ -156,7 +156,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 6
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1}
   if (SW == 'prb_c') {
     SW.no <- c(185,187,193,194,198)
@@ -164,7 +164,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))      
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 6
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 3}
   if (SW == 'prb_p')  { 
     SW.no <- c(209, 210, 205, 218)
@@ -172,7 +172,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 6
-    w.size <- 'small'
+    w.size <- 0
     c.type <- 1}
   if (SW == 'prb_r') {
     SW.no <- c(189,190,195,196,201)
@@ -180,7 +180,7 @@ shedVT <- function (SW, conv){
     SW.s <- subset(s.table, select = grep(SW, names(s.table)))
     c.table <- subset(c.table, select = grep(SW, names(c.table)))
     b.name <- 6
-    w.size <- 'large'
+    w.size <- 1
     c.type <- 1}
 
   
@@ -342,6 +342,7 @@ shedVT <- function (SW, conv){
       
       #merging with static valuetable
       SW.static <- filter(st.table, st.table$class %in% SW.no)
+      
       SW.static <- SW.static[,-c(1,9)]
       SW.st.table <- lapply(names(SW.static), function(x) table(SW.static[x]))
       SW.st.df <- as.data.frame(plyr::ldply(SW.st.table, rbind)) #getting value count
@@ -532,6 +533,7 @@ shedVT <- function (SW, conv){
     s.w.lf.st$C.basin <- b.name
     s.w.lf.st$C.size <- w.size
     s.w.lf.st$C.clim <- c.type
+
     return(s.w.lf.st)
   }  
     

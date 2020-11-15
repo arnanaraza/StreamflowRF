@@ -1,25 +1,29 @@
 ### FUNCTION TO CREATE PRE-DEFINED WATERSHED GROUPING METHODS FOR VALUE TABLE ASSEMBLY 
 
-groupVT <- function(basin='pca',td=0.8, floss='no'){
+groupVT <- function(basin,td=0.8, floss='no'){
   
   # PCA-based on 'clstr' variable
   if (basin == 'pca1'){
+    SW.list[-12]
     SW.list <- SW.list[clstr==1]
     print(paste(SW.list, 'is PCA1'))
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca2'){
+    SW.list[-12]
     SW.list <- SW.list[clstr==2]  
     print(paste(SW.list, 'is PCA2'))
     
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca3'){
+    SW.list[-12]
     SW.list <- SW.list[clstr==3]   
     print(paste(SW.list, 'is PCA3'))
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca4'){
+    SW.list[-12]
     SW.list <-SW.list[clstr==4]      
     print(paste(SW.list, 'is PCA4'))
     SW.conv <-rep('no', length(SW.list))
@@ -28,11 +32,11 @@ groupVT <- function(basin='pca',td=0.8, floss='no'){
   # group all watersheds
   if (basin == 'all'){
     SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be', 
-                 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_p', 'crb_s', 
+                 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_s', 
                  'crb_t', 'crb_u', 'mrb_s', 'prb_b', 'prb_c', 'prb_a', 
                  'prb_p', 'prb_r')    
     SW.conv <- c ('yes', 'no', 'no', 'no', 'no','yes', 'no', 'no', 'no','no',
-                  'no','no','no','no','no','no','no','no','yes', 'no', 'no')}
+                  'no','no','no','no','no','no','no','yes', 'no', 'no')}
   
   #group per mother basin
   if (basin == 'aarb'){
@@ -45,8 +49,8 @@ groupVT <- function(basin='pca',td=0.8, floss='no'){
     SW.list <-  c('arb_b', 'arb_c')
     SW.conv <- c ('no', 'no')}
   if (basin == 'crb'){
-    SW.list <- c('crb_a', 'crb_be', 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_p', 'crb_s', 'crb_t', 'crb_u')
-    SW.conv <- c('yes', 'no', 'no', 'no','no','no','no','no','no','no')}
+    SW.list <- c('crb_a', 'crb_be', 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_s', 'crb_t', 'crb_u')
+    SW.conv <- c('yes', 'no', 'no', 'no','no','no','no','no','no')}
   if (basin == 'mrb'){
     SW.list <-  'mrb_s'
     SW.conv <-'no'}
@@ -165,7 +169,10 @@ groupVT <- function(basin='pca',td=0.8, floss='no'){
   if (floss == 'no'){
     train <- train [,-c(1:11)]}
   
+  train[] <- sapply(train, as.numeric)
+  
 return (train)  
+  
 }
 
 
