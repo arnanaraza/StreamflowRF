@@ -1,6 +1,7 @@
 ### FUNCTION THAT RETURNS COVARIATE VALUE TABLEs OF PER WATERSHED-OF-INTEREST
 
 shedVT <- function (SW, conv){
+  
   shape <- readOGR(dsn =dataDir, layer = "sw")
   
   # Load individual valuetables
@@ -533,7 +534,8 @@ shedVT <- function (SW, conv){
     s.w.lf.st$C.basin <- b.name
     s.w.lf.st$C.size <- w.size
     s.w.lf.st$C.clim <- c.type
-
+    s.w.lf.st$C.bname <- SW
+    
     return(s.w.lf.st)
   }  
     

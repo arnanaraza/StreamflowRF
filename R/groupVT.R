@@ -1,30 +1,27 @@
 ### FUNCTION TO CREATE PRE-DEFINED WATERSHED GROUPING METHODS FOR VALUE TABLE ASSEMBLY 
 
-groupVT <- function(basin,td=0.8, floss='no'){
+groupVT <- function(basin){
   
   # PCA-based on 'clstr' variable
   if (basin == 'pca1'){
-    SW.list[-12]
     SW.list <- SW.list[clstr==1]
     print(paste(SW.list, 'is PCA1'))
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca2'){
-    SW.list[-12]
     SW.list <- SW.list[clstr==2]  
     print(paste(SW.list, 'is PCA2'))
-    
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca3'){
-    SW.list[-12]
     SW.list <- SW.list[clstr==3]   
+
     print(paste(SW.list, 'is PCA3'))
     SW.conv <-rep('no', length(SW.list))
   }
   if (basin == 'pca4'){
-    SW.list[-12]
-    SW.list <-SW.list[clstr==4]      
+    SW.list <- SW.list[clstr==4]  
+#    SW.list  <- SW.list[SW.list!='crb_p']
     print(paste(SW.list, 'is PCA4'))
     SW.conv <-rep('no', length(SW.list))
   }
@@ -32,11 +29,12 @@ groupVT <- function(basin,td=0.8, floss='no'){
   # group all watersheds
   if (basin == 'all'){
     SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be', 
-                 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_s', 
-                 'crb_t', 'crb_u', 'mrb_s', 'prb_b', 'prb_c', 'prb_a', 
+                 'crb_bu', 'crb_d', 'crb_j','crb_m','crb_p', 'crb_s', 
+                 'crb_t', 'crb_u','mrb_s', 'prb_b', 'prb_c', 'prb_a', 
                  'prb_p', 'prb_r')    
     SW.conv <- c ('yes', 'no', 'no', 'no', 'no','yes', 'no', 'no', 'no','no',
-                  'no','no','no','no','no','no','no','yes', 'no', 'no')}
+                  'no','no','no','no','no','no','no','yes', 'no', 'no')
+    }
   
   #group per mother basin
   if (basin == 'aarb'){
@@ -49,8 +47,8 @@ groupVT <- function(basin,td=0.8, floss='no'){
     SW.list <-  c('arb_b', 'arb_c')
     SW.conv <- c ('no', 'no')}
   if (basin == 'crb'){
-    SW.list <- c('crb_a', 'crb_be', 'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_s', 'crb_t', 'crb_u')
-    SW.conv <- c('yes', 'no', 'no', 'no','no','no','no','no','no')}
+    SW.list <- c('crb_a', 'crb_be', 'crb_bu', 'crb_d', 'crb_j','crb_m','crb_p', 'crb_s', 'crb_t', 'crb_u')
+    SW.conv <- c('yes', 'no', 'no', 'no','no','no','no','no','no','no')}
   if (basin == 'mrb'){
     SW.list <-  'mrb_s'
     SW.conv <-'no'}
@@ -119,7 +117,6 @@ groupVT <- function(basin,td=0.8, floss='no'){
   if (basin == 'prb_p'){
     SW.list <-  c('prb_p')
     SW.conv <- c ('no')}
-  
   if (basin == 'prb_r'){
     SW.list <-  c('prb_r')
     SW.conv <- c ('no')}
@@ -139,9 +136,11 @@ groupVT <- function(basin,td=0.8, floss='no'){
                 'P.bd3', 'P.br3', 'P.cl3', 'P.sa3', 'P.si3', 'P.dem3', 'P.sl3',
                 'P.bd4', 'P.br4', 'P.cl4', 'P.sa4', 'P.si4', 'P.dem4', 'P.sl4', 
                 'P.bd5', 'P.br5', 'P.cl5', 'P.sa5', 'P.si5', 'P.dem5', 'P.sl5', 
-                'date', 'W6.pcpw', 'W7.pcpm', 'W8.pcpmx', 'C.area', 'C.basin', 'C.size', 'C.clim')
+                'date', 'W6.pcpw', 'W7.pcpm', 'W8.pcpmx', 'C.area', 'C.basin', 'C.size', 'C.clim', 
+                'C.bname')
   all.VT2 <- lapply(all.VT1, setNames, nm = vt.names)
   all.VT3 <- lapply(all.VT2, function(x) unfactor(x))
+
   all.VT.fin <- do.call("rbind", all.VT3)
   all.VT.fin <- na.omit(all.VT.fin)
   all.VT.fin$mo <- month(all.VT.fin$date)
@@ -151,27 +150,21 @@ groupVT <- function(basin,td=0.8, floss='no'){
   all.VT.fin$O.obs <- all.VT.fin$O.obs/1000 #into m3/sec
   
   setwd(vtDir)
-  write.csv(all.VT.fin, paste0(basin,'_',round(td*100,1),'.csv'), row.names = F)
+  write.csv(all.VT.fin, paste0(basin,'.csv'), row.names = F)
   setwd(mainDir)
   
-  all.VT.fin <- all.VT.fin[,-53] #remove date
   
   # create training-testing data
-  if (td < 1){
-    set.seed(123) 
-    train <- sample(seq_len(nrow(all.VT.fin)), size = floor((1-td)*nrow(all.VT.fin)))
-    train <- all.VT.fin[-train,]}
-  if (td == 1){
-    train <- all.VT.fin}
+#  if (td < 1){
+ #   set.seed(123) 
+  #  train <- sample(seq_len(nrow(all.VT.fin)), size = floor((1-td)*nrow(all.VT.fin)))
+   # train <- all.VT.fin[-train,]}
+  #if (td == 1){
+   # train <- all.VT.fin}
+
   
-  # for forest loss assessment?
-  if (floss == 'yes'){}
-  if (floss == 'no'){
-    train <- train [,-c(1:11)]}
-  
-  train[] <- sapply(train, as.numeric)
-  
-return (train)  
+#  train[] <- sapply(train, as.numeric)
+return (all.VT.fin)  
   
 }
 

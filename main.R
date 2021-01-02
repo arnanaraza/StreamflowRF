@@ -8,9 +8,8 @@ pacman::p_load(caTools, lubridate, rfUtilities, ranger, hydroGOF,factoextra,corr
                Hmisc, splitstackshape,ggplot2, ggpmisc, caret, gridExtra,ggpubr,Rmisc)
 mainDir <- 'D:/StreamflowRF'
 dataDir <- 'D:/StreamflowRF/data'
-vtDir <- 'D:/StreamflowRF/intermediate/VT/'
-predDir <- 'D:/StreamflowRF/results/'
-plotDir <- 'D:/THESIS_PP/finalresults/plots/' #figureDir?
+vtDir <- 'D:/StreamflowRF_Results/intermediate/VT/'
+predDir <- 'D:/StreamflowRF_Results/results/'
 SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be', 
              'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_p', 'crb_s', 
              'crb_t', 'crb_u', 'mrb_s', 'prb_a', 'prb_b', 'prb_c', 
@@ -18,125 +17,119 @@ SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be',
 setwd(mainDir)
 
 
-# 1. VALUETABLE ASSEMBLY
-source('R/groupVT.R')
+# 1. VALUETABLE ASSEMBLY (run once)
+  source('R/groupVT.R')
+  
+  start_time <- Sys.time()
+  
+  #all
+  all.VT <- groupVT('all')
+  #basin
+  aarb.VT <- groupVT('aarb')
+  abrb.VT <- groupVT('abrb')
+  arb.VT <- groupVT('arb')
+  crb.VT <- groupVT('crb')
+  mrb.VT <- groupVT('mrb')
+  prb.VT <- groupVT('prb')
+  #watersheds
+  each.VT <- lapply(1:length(SW.list), function(x) 
+    groupVT(SW.list[[x]]))
+  #assign clusters from k-means/pca clustering
+  source('R/PCA.R')
+  clstr <- PCA(each.VT,4)
+  clstr
+  pca1.VT <-  groupVT('pca1')
+  pca2.VT <-  groupVT('pca2')
+  pca3.VT <-  groupVT('pca3')
+  pca4.VT <-  groupVT('pca4')
+  
+  end_time <- Sys.time()
+  end_time - start_time
 
-#all
-all.VT.yes <- groupVT('all', 0.6, 'yes')
 
-#basin
-aarb.VT.yes <- groupVT('aarb', 0.6, 'yes')
-abrb.VT.yes <- groupVT('abrb', 0.6, 'yes')
-arb.VT.yes <- groupVT('arb', 0.6, 'yes')
-crb.VT.yes <- groupVT('crb', 0.6, 'yes')
-mrb.VT.yes <- groupVT('mrb', 0.6, 'yes')
-prb.VT.yes <- groupVT('prb', 0.6, 'yes')
+# 2. MODEL TRAINING 
 
-#watersheds
-each.VT <- lapply(1:length(SW.list), function(x) groupVT(SW.list[[x]], 0.6, 'yes'))
+#Open valuetables
+all.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/all.csv")
+pca1.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca1.csv")
+pca2.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca2.csv")
+pca3.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca3.csv")
+pca4.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca4.csv")
+aarb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/aarb.csv")
+abrb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/abrb.csv")
+arb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/arb.csv")
+crb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/crb.csv")
+mrb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/mrb.csv")
+prb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/prb.csv")
+each.VT <- lapply(SW.list, function(x) read.csv(paste0("D:/StreamflowRF_Results/intermediate/VT/",x, '.csv')))
 
-#assign clusters from k-means/pca clustering
-source('R/PCA.R')
-clstr <- PCA(each.VT)
-clstr
-pca1.VT <-  groupVT('pca1', 0.6, 'yes')
-pca2.VT <-  groupVT('pca2', 0.6, 'yes') 
-pca3.VT <-  groupVT('pca3', 0.6, 'yes')
-pca4.VT <-  groupVT('pca4', 0.6, 'yes')
-
-# 2. RUNNING RF
-all.RF <- ranger(all.VT.yes[[17]] ~ ., data=all.VT.yes[,-17], importance='permutation',
-                 mtry=15, keep.inbag=T)
-
-pca1.RF <- ranger(pca1.VT[[17]] ~ ., data=pca1.VT[,-17],mtry=15,  keep.inbag = T,importance='permutation')
-pca2.RF <- ranger(pca2.VT[[17]] ~ ., data=pca2.VT[,-17],mtry=15,  keep.inbag = T,importance='permutation')
-pca3.RF <- ranger(pca3.VT[[17]] ~ ., data=pca3.VT[,-17],mtry=15,  keep.inbag = T,importance='permutation')
-pca4.RF <- ranger(pca4.VT[[17]] ~ ., data=pca4.VT[,-17],mtry=15,  keep.inbag = T,importance='permutation')
-
-aarb.RF <- ranger(aarb.VT.yes[[17]] ~ ., data=aarb.VT.yes[,-17],mtry=15,  keep.inbag = T,importance='permutation')
-abrb.RF <- ranger(abrb.VT.yes[[17]] ~ ., data=abrb.VT.yes[,-17],mtry=15, keep.inbag = T,importance='permutation')
-arb.RF <- ranger(arb.VT.yes[[17]] ~ ., data=arb.VT.yes[,-17],mtry=15,keep.inbag = T,importance='permutation')
-crb.RF <- ranger(crb.VT.yes[[17]] ~ ., data=crb.VT.yes[,-17],mtry=15,keep.inbag = T,importance='permutation')
-mrb.RF <- ranger(mrb.VT.yes[[17]] ~ ., data=mrb.VT.yes[,-17],mtry=15, keep.inbag = T,importance='permutation')
-prb.RF <- ranger(prb.VT.yes[[17]] ~ ., data=prb.VT.yes[,-17],mtry=15,keep.inbag = T,importance='permutation')
-
-each.RF <-  lapply(1:length(SW.list), function(x) ranger(each.VT[[x]][[17]] ~ ., data=each.VT[[x]][,-17],
-                                                         mtry=15, keep.inbag = T))
-
-### MODEL TESTS
-pca.models<- list(pca4.RF, pca4.RF, pca4.RF, pca4.RF, pca4.RF, pca4.RF, pca1.RF, pca3.RF,
-                  pca1.RF, pca4.RF, pca1.RF, pca4.RF, pca4.RF, pca4.RF, pca3.RF, pca1.RF, 
-                  pca2.RF, pca4.RF, pca4.RF, pca4.RF, pca4.RF)
-rm(pca1.RF, pca1.RF, pca1.RF, pca1.RF, pca1.RF, pca1.RF, pca3.RF, pca4.RF,
-  pca3.RF, pca1.RF, pca3.RF, pca1.RF, pca1.RF, pca1.RF, pca4.RF, pca3.RF, 
-  pca2.RF, pca1.RF, pca1.RF, pca1.RF, pca1.RF)
-
-basin.models <- list(aarb.RF, aarb.RF, abrb.RF, arb.RF, arb.RF, crb.RF, crb.RF,
-                     crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,
-                     mrb.RF, prb.RF,prb.RF,prb.RF,prb.RF,prb.RF)
-rm(aarb.RF, aarb.RF, abrb.RF, arb.RF, arb.RF, crb.RF, crb.RF,
-  crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,crb.RF,
-  mrb.RF, prb.RF,prb.RF,prb.RF,prb.RF,prb.RF)
 
 ### Model testing (held-out data)
-set.seed(123)
+setwd(mainDir)
 source('R/predTest.R')
-cv.all <- lapply(1:21, function(x) predTest(0.60, SW.list[[x]], all.RF, 'all'))
-cv.pca <- lapply(1:21, function(x) predTest(0.60, SW.list[[x]], pca.models[[x]], 'pca'))
-cv.basin <- lapply(1:21, function(x) predTest(0.60, SW.list[[x]], basin.models[[x]], 'basin'))
-cv.shed <- lapply(1:21, function(x) predTest(0.60, SW.list[[x]], each.RF[[x]], 'shed'))
+predDir <-"D:/StreamflowRF_Results/results/validation_bc40"
+#predDir <-"D:/StreamflowRF_Results/results/validation_LOOCV"
 
-# Indpendent watershed validation (crb_p or Pinacanauan de-Ilagan basin) #12 of SW_list
-each.VT <- lapply(1:length(SW.list), function(x) groupVT(SW.list[[x]], 1, 'yes'))
-crb_p <- each.VT[[12]]
-crb_p.all <- predTest(1, SW.list[[12]], all.RF, 'all')
-crb_p.pca <- predTest(1, SW.list[[12]], pca.models[[12]], 'pca')
-crb_p.basin <- predTest(1, SW.list[[12]], basin.models[[12]], 'basin')
-crb_p.shed <- predTest(1, SW.list[[12]], each.RF[[12]], 'shed')
-
-crb_p.pca$mo  <- months.Date(crb_p.pca$date)
-crb_p.pca$year  <- year(crb_p.pca$date)
-crb_p.pca <- subset(crb_p.pca, crb_p.pca$year > 2002)
-crb_p.pca <- aggregate( predicted ~ mo + year  , crb_p.pca , mean )
-crb_p.pca$year1 <- as.yearmon(paste0(crb_p.pca$year,'-', crb_p.pca$mo))
-
-crb_p.pca <- crb_p.pca[with(crb_p.pca, order(mo,year)), ]
-
-abuan <- read.csv('D:/ABUAN_SWAT/cal_val5.csv')
-abuan$year <- as.yearmon(paste0(abuan$Year,'-', abuan$Month))
-abuan <- abuan[,c('year', 'pcp', 'uncalibrated', 'calibrated', 'observed')]
-abuan$mo <- months.Date(abuan$year)
-abuan <- abuan[with(abuan, order(mo,year)), ]
-abuan$predicted <- crb_p.pca$predicted
-abuan <- abuan[with(abuan, order(year)), ]
-
-hydrograph(timeSeries = abuan$year, streamflow=abuan$observed,precip = abuan$pcp,
-           streamflow2=abuan$predicted,streamflow3=abuan$calibrated, S.units='m3s', P.units = 'mm')
-
+start_time <- Sys.time()
+lapply(unique(all.VT$C.bname), function(x) predTest(0.4, all.VT, x, 'all', predDir))
+lapply(unique(pca1.VT$C.bname), function(x) predTest(0.4, pca1.VT,x, 'pca', predDir))
+lapply(unique(pca2.VT$C.bname), function(x) predTest(0.4, pca2.VT,x, 'pca', predDir))
+lapply(unique(pca3.VT$C.bname), function(x) predTest(0.4, pca3.VT,x, 'pca', predDir))
+lapply(unique(pca4.VT$C.bname), function(x) predTest(0.4, pca4.VT,x, 'pca', predDir))
+lapply(unique(aarb.VT$C.bname), function(x) predTest(0.4, aarb.VT,x, 'basin', predDir))
+lapply(unique(abrb.VT$C.bname), function(x) predTest(0.4, abrb.VT,x, 'basin', predDir))
+lapply(unique(arb.VT$C.bname), function(x) predTest(0.4, arb.VT,x, 'basin', predDir))
+lapply(unique(crb.VT$C.bname), function(x) predTest(0.4, crb.VT,x, 'basin', predDir))
+lapply(unique(mrb.VT$C.bname), function(x) predTest(0.4, mrb.VT,x, 'basin', predDir))
+lapply(unique(prb.VT$C.bname), function(x) predTest(0.4, prb.VT,x, 'basin', predDir))
+lapply(1:21, function(x) predTest(0.4,each.VT[[x]], SW.list[[x]], 'shed',predDir))
+end_time <- Sys.time()
+end_time - start_time
 
 
 ### ACCURACY
+setwd(mainDir)
 source('R/Acc.R')
-all.df <- ldply(lapply(1:21, function(x) Acc(cv.all[[x]],SW.list[[x]])), data.frame)
+setwd(predDir)
+pred.list <- list.files(predDir,pattern=glob2rx('*all*0.4*'))
+all.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
 all.df$method <- 'all'
-pca.df <- ldply(lapply(1:21, function(x) Acc(read.csv(paste0(getwd(), '/results/', 
-                                                         SW.list[[x]],'_pca_pred.csv')),SW.list[[x]])), data.frame)
+  
+pred.list <- list.files(predDir,pattern=glob2rx('*pca*0.4*'))
+SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
+SW.list[7:8] <- c('crb_be', 'crb_bu')
+pca.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
 pca.df$method <- 'pca'
-basin.df <- ldply(lapply(1:21, function(x) Acc(read.csv(paste0(getwd(), '/results/', 
-                                                           SW.list[[x]],'_basin_pred.csv')),SW.list[[x]])),data.frame)
+
+pred.list <- list.files(predDir,pattern=glob2rx('*basin*0.4*'))
+SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
+SW.list[6:7] <- c('crb_be', 'crb_bu')
+basin.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
 basin.df$method <- 'basin'
-shed.df <- ldply(lapply(1:21, function(x) Acc(read.csv(paste0(getwd(), '/results/', 
-                                                          SW.list[[x]],'_shed_pred.csv')),SW.list[[x]])),data.frame)
+
+pred.list <- list.files(predDir,pattern=glob2rx('*shed*0.4*'))
+SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
+shed.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
 shed.df$method <- 'shed'
 
-accAll <- cbind(pca.df,basin.df[-1],all.df[-1],shed.df[-1])
-setwd(paste0(getwd(), '/results'))
-write.csv(accAll, 'accAll_40test.csv', row.names=F)
+
+all.pred <- left_join(all.df, pca.df, by = c('str'='str'))
+all.pred <- left_join(all.pred, basin.df, by = c('str'='str'))
+all.pred <- data.frame(all.df, pca.df,basin.df, shed.df)
+write.csv(all.pred, 'acc_40_bc.csv', row.names=F)
 
 
 ## data frame one-time
-all.df <- ldply(lapply(1:21, function(x) read.csv(paste0('M:/THESIS_PP/finalresults/predictions/', 
-                            SW.list[[x]],'_all_pred.csv'))), data.frame) ###########!!!!!!!!!!!!!!!!
+all.df <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/', 
+                            SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
+all.df.bc <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/validation_bc/', 
+                                                         SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
+all.df.bc$predicted <- all.df$predicted - (all.df.bc$predicted - all.df$predicted)
+
+all.df.trim <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/validation_trim/', 
+                                                            SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
+
+
 pca.df <- ldply(lapply(1:21, function(x) read.csv(paste0('M:/THESIS_PP/finalresults/predictions/', 
                                                          SW.list[[x]],'_pca_pred.csv'))), data.frame)
 
@@ -148,6 +141,8 @@ shed.df <- ldply(lapply(1:21, function(x) read.csv(paste0('M:/THESIS_PP/finalres
 
 # ACC one-time
 R2(all.df$observed, all.df$predicted)
+R2(all.df.bc$observed, all.df.bc$predicted)
+R2(all.df.trim$observed, all.df.trim$predicted)
 NSeff(sim=all.df$predicted, obs=all.df$observed)
 pbias(all.df$predicted, all.df$observed)
 
