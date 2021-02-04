@@ -6,12 +6,12 @@
    vt.list <- lapply(each.VT, function(x) x[] <- sapply(x, as.numeric))
    
    each.mean <- lapply(1:length(SW.list), function(x)
-     t(colMeans(vt.list[[x]][,-c(17,53,61)]))) #don't include streamflow and dates on the clustering
+     t(colMeans(vt.list[[x]][,-c(17,53,58,61,62)]))) #don't include streamflow and dates on the clustering
    each.mean <- ldply(each.mean,data.frame)
    each.mean <- as.data.frame(scale(each.mean))
    each.mean <- each.mean[,-4] #NA-full column
    
-    kmeans(each.mean, centers = clstr,nstart=50,iter.max = 1000)[[1]]
+    kmeans(each.mean, centers = clstr,nstart=50,iter.max = 10000)[[1]]
 
  }
  

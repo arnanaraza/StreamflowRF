@@ -21,8 +21,22 @@ groupVT <- function(basin){
   }
   if (basin == 'pca4'){
     SW.list <- SW.list[clstr==4]  
-#    SW.list  <- SW.list[SW.list!='crb_p']
     print(paste(SW.list, 'is PCA4'))
+    SW.conv <-rep('no', length(SW.list))
+  }
+  if (basin == 'pca5'){
+    SW.list <- SW.list[clstr==5]  
+    print(paste(SW.list, 'is PCA5'))
+    SW.conv <-rep('no', length(SW.list))
+  }
+  if (basin == 'pca6'){
+    SW.list <- SW.list[clstr==6]  
+    print(paste(SW.list, 'is PCA6'))
+    SW.conv <-rep('no', length(SW.list))
+  }
+  if (basin == 'pca7'){
+    SW.list <- SW.list[clstr==7]  
+    print(paste(SW.list, 'is PCA7'))
     SW.conv <-rep('no', length(SW.list))
   }
   

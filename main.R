@@ -3,19 +3,62 @@
 
 # 0. PRELIMS
 rm(list = ls())
-pacman::p_load(caTools, lubridate, rfUtilities, ranger, hydroGOF,factoextra,corrplot,
-               rgdal,raster, plyr, dplyr , data.table, reshape2, varhandle, xts,EcoHydRology,
-               Hmisc, splitstackshape,ggplot2, ggpmisc, caret, gridExtra,ggpubr,Rmisc)
-mainDir <- 'D:/StreamflowRF'
-dataDir <- 'D:/StreamflowRF/data'
-vtDir <- 'D:/StreamflowRF_Results/intermediate/VT/'
-predDir <- 'D:/StreamflowRF_Results/results/'
+pacman::p_load(randomForest, caTools, lubridate, rfUtilities, ranger, hydroGOF,
+               rgdal,raster, plyr, dplyr , data.table, reshape2, varhandle, xts,caret,
+               Hmisc, splitstackshape,ggplot2, caret, gridExtra,ggpubr,Rmisc,vip)
+
+mainDir <- 'C:/StreamflowRF'
+dataDir <- 'C:/StreamflowRF/data'
+vtDir <- 'C:/StreamflowRF_Results/intermediate/VT/'
+predDir <- 'C:/StreamflowRF_Results/results/'
 SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be', 
              'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_p', 'crb_s', 
              'crb_t', 'crb_u', 'mrb_s', 'prb_a', 'prb_b', 'prb_c', 
              'prb_p', 'prb_r') 
 setwd(mainDir)
 
+# 0. OBSERVED DATA GAPS 
+setwd(dataDir)
+obs <- read.csv('obs_98_16.csv')
+names(obs)[2:length(obs)] <- paste0('shed_', names(obs)[2:length(obs)])
+obs$date <- seq(from = as.Date("1998-01-01"), to = as.Date("2016-12-31"), by = 'day')
+obs$year <- format(as.Date(obs$date, format="%m/%d/%Y"),"%Y") 
+obs <- obs[-c(1:730),]
+
+  pcp <- all.VT
+  pcp$year <- format(as.Date(pcp$date, format="%Y-%m-%d"),"%Y") 
+  unique(pcp$year)
+  na_pcp <- pcp %>% 
+    group_by(year) %>% 
+    summarise_at(vars(starts_with("C.bname")), ~sum(is.na(.)))
+
+na_obs <- obs %>% 
+  group_by(year) %>% 
+  summarise_at(vars(starts_with("shed")), ~sum(is.na(.)))
+names(na_obs) <- sub("shed_", "", names(na_obs))
+
+obs_yr <- data.frame(ID=na_obs[,1], Days=rowMeans(na_obs[,-c(1, length(na_obs))]))
+names(obs_yr) <- c('Year', 'Days')
+p<-ggplot(data=obs_yr, aes(x=Year, y=Days)) + theme_bw()+
+  geom_bar(stat="identity",width=0.75) +  ylab("Missing daily data (n)")+
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=90, hjust=1))
+setwd(predDir)
+ggsave(plot=p, filename=paste0('Figure_Gaps.png'),
+       device='png', dpi=600, width = 7.5, height = 5, units='in')
+
+n<-names(obs)[2:22]  
+obs[,2:22] <- obs[,2:22]/1000  
+gaps <- lapply(1:21, function(x) ggplot(obs, aes_string('date', n[[x]])) +geom_line()+theme_bw()+
+         ggtitle( substring(n[[x]],6))+    labs(x ='Year',y=bquote('Observed Q ('*m^-3~s^-1*')'))) 
+ggsave( multiplot(gaps[[1]], gaps[[2]],gaps[[3]], gaps[[4]], gaps[[5]],
+                  gaps[[6]], gaps[[7]],gaps[[8]], gaps[[9]], gaps[[10]],
+                  gaps[[11]], gaps[[12]],gaps[[13]], gaps[[14]], gaps[[15]],
+                  gaps[[16]], gaps[[17]],gaps[[18]], gaps[[19]], gaps[[20]],
+                  gaps[[21]],cols=3),filename='PaperFigure_Obsn.png',device='png',
+        dpi=600, width = 8, height = 16, units='in' )
+
+setwd(mainDir)
 
 # 1. VALUETABLE ASSEMBLY (run once)
   source('R/groupVT.R')
@@ -35,14 +78,17 @@ setwd(mainDir)
   each.VT <- lapply(1:length(SW.list), function(x) 
     groupVT(SW.list[[x]]))
   #assign clusters from k-means/pca clustering
-  source('R/PCA.R')
-  clstr <- PCA(each.VT,4)
+  source('R/pca.R')
+  clstr <- PCA(each.VT,2)
   clstr
   pca1.VT <-  groupVT('pca1')
   pca2.VT <-  groupVT('pca2')
   pca3.VT <-  groupVT('pca3')
   pca4.VT <-  groupVT('pca4')
-  
+    pca5.VT <-  groupVT('pca5')
+    pca6.VT <-  groupVT('pca6')
+    pca7.VT <-  groupVT('pca7')
+    
   end_time <- Sys.time()
   end_time - start_time
 
@@ -50,83 +96,155 @@ setwd(mainDir)
 # 2. MODEL TRAINING 
 
 #Open valuetables
-all.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/all.csv")
-pca1.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca1.csv")
-pca2.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca2.csv")
-pca3.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca3.csv")
-pca4.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/pca4.csv")
-aarb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/aarb.csv")
-abrb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/abrb.csv")
-arb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/arb.csv")
-crb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/crb.csv")
-mrb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/mrb.csv")
-prb.VT <- read.csv("D:/StreamflowRF_Results/intermediate/VT/prb.csv")
-each.VT <- lapply(SW.list, function(x) read.csv(paste0("D:/StreamflowRF_Results/intermediate/VT/",x, '.csv')))
+all.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/all.csv")
+pca1.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/pca1.csv")
+pca2.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/pca2.csv")
+pca3.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/pca3.csv")
+pca4.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/pca4.csv")
+pca5.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/pca5.csv")
+aarb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/aarb.csv")
+abrb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/abrb.csv")
+arb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/arb.csv")
+crb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/crb.csv")
+mrb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/mrb.csv")
+prb.VT <- read.csv("C:/StreamflowRF_Results/intermediate/VT/prb.csv")
+each.VT <- lapply(SW.list, function(x) read.csv(paste0("C:/StreamflowRF_Results/intermediate/VT/",x, '.csv')))
 
 
 ### Model testing (held-out data)
 setwd(mainDir)
-source('R/predTest.R')
-predDir <-"D:/StreamflowRF_Results/results/validation_bc40"
-#predDir <-"D:/StreamflowRF_Results/results/validation_LOOCV"
+source('R/predTestangina.R')
+predDir <-"C:/StreamflowRF_Results/results/validation_final_hugot"
+#val_yr <- c(45,23,23,45,45,45,78,45,45,45,12,45,45,45,45,45,01,34,34,34,34)
+#rb <- c(1,1,2,3,3,4,4,4,4,4,4,4,4,4,4,5,6,6,6,6,6)
 
 start_time <- Sys.time()
-lapply(unique(all.VT$C.bname), function(x) predTest(0.4, all.VT, x, 'all', predDir))
-lapply(unique(pca1.VT$C.bname), function(x) predTest(0.4, pca1.VT,x, 'pca', predDir))
-lapply(unique(pca2.VT$C.bname), function(x) predTest(0.4, pca2.VT,x, 'pca', predDir))
-lapply(unique(pca3.VT$C.bname), function(x) predTest(0.4, pca3.VT,x, 'pca', predDir))
-lapply(unique(pca4.VT$C.bname), function(x) predTest(0.4, pca4.VT,x, 'pca', predDir))
-lapply(unique(aarb.VT$C.bname), function(x) predTest(0.4, aarb.VT,x, 'basin', predDir))
-lapply(unique(abrb.VT$C.bname), function(x) predTest(0.4, abrb.VT,x, 'basin', predDir))
-lapply(unique(arb.VT$C.bname), function(x) predTest(0.4, arb.VT,x, 'basin', predDir))
-lapply(unique(crb.VT$C.bname), function(x) predTest(0.4, crb.VT,x, 'basin', predDir))
-lapply(unique(mrb.VT$C.bname), function(x) predTest(0.4, mrb.VT,x, 'basin', predDir))
-lapply(unique(prb.VT$C.bname), function(x) predTest(0.4, prb.VT,x, 'basin', predDir))
-lapply(1:21, function(x) predTest(0.4,each.VT[[x]], SW.list[[x]], 'shed',predDir))
+lapply(1:length(unique(all.VT$C.bname)), function(x) predTest(1, all.VT, unique(all.VT$C.bname)[[x]],
+                                                              'all', predDir))#, val_yr[[x]]))
+lapply(1:length(unique(pca1.VT$C.bname)), function(x) predTest(1, pca1.VT,unique(pca1.VT$C.bname)[[x]], 
+                                                               'pca', predDir))#, val_yr[clstr==1] [[x]]))
+lapply(1:length(unique(pca2.VT$C.bname)), function(x) predTest(1, pca2.VT,unique(pca2.VT$C.bname)[[x]], 
+                                                               'pca', predDir))#, val_yr[clstr==2] [[x]]))
+lapply(1:length(unique(pca3.VT$C.bname)), function(x) predTest(1, pca3.VT,unique(pca3.VT$C.bname)[[x]], 
+                                                               'pca', predDir))#, val_yr[clstr==3] [[x]]))
+lapply(1:length(unique(pca4.VT$C.bname)), function(x) predTest(1, pca4.VT,unique(pca4.VT$C.bname)[[x]], 
+                                                               'pca', predDir))#, val_yr[clstr==4] [[x]]))
+lapply(1:length(unique(aarb.VT$C.bname)), function(x) predTest(1, aarb.VT,unique(aarb.VT$C.bname)[[x]],
+                                                               'basin', predDir))#,val_yr[rb==1] [[x]]))
+lapply(1:length(unique(abrb.VT$C.bname)), function(x) predTest(1, abrb.VT,unique(abrb.VT$C.bname)[[x]],
+                                                               'basin', predDir))#,val_yr[rb==2] [[x]]))
+lapply(1:length(unique(arb.VT$C.bname)), function(x) predTest(1, arb.VT,unique(arb.VT$C.bname)[[x]],
+                                                              'basin', predDir))#,val_yr[rb==3] [[x]]))
+lapply(1:length(unique(crb.VT$C.bname)), function(x) predTest(1, crb.VT,unique(crb.VT$C.bname)[[x]],
+                                                              'basin', predDir))#,val_yr[rb==4] [[x]]))
+lapply(1:length(unique(mrb.VT$C.bname)), function(x) predTest(1, mrb.VT,unique(mrb.VT$C.bname)[[x]],
+                                                             'basin', predDir))##,val_yr[rb==5] [[x]]))
+lapply(1:length(unique(prb.VT$C.bname)), function(x)predTest(1, prb.VT,unique(prb.VT$C.bname)[[x]],
+                                                             'basin', predDir))##,val_yr[rb==6] [[x]]))
+lapply(1:21, function(x) predTest(1,each.VT[[x]], SW.list[[x]], 'shed',predDir))
 end_time <- Sys.time()
 end_time - start_time
 
-
-### ACCURACY
+### MODEL EVALUATIONS
 setwd(mainDir)
 source('R/Acc.R')
 setwd(predDir)
-pred.list <- list.files(predDir,pattern=glob2rx('*all*0.4*'))
-all.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
-all.df$method <- 'all'
-  
-pred.list <- list.files(predDir,pattern=glob2rx('*pca*0.4*'))
+pred.list <- list.files(predDir,pattern=glob2rx('*pca*1*csv'))
 SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
-SW.list[7:8] <- c('crb_be', 'crb_bu')
 pca.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
-pca.df$method <- 'pca'
+pca.df$method <- 'PCA-clustered'
+pca.df1 <-lapply(pred.list, function(x) read.csv(x))
+pca.df1 <- lapply(pca.df1, transform, date = as.Date(date)) 
+pca.df1 <- lapply(pca.df1, function(x) subset(x, x$date >= '2004-01-01' & x$date <= '2005-12-31'))
+pca.graph <- RegLine(ldply(pca.df1,data.frame), 'PCA-clustered')
+pca.graph[[2]]
 
-pred.list <- list.files(predDir,pattern=glob2rx('*basin*0.4*'))
+pred.list <- list.files(predDir,pattern=glob2rx('*basin*1*csv'))
 SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
-SW.list[6:7] <- c('crb_be', 'crb_bu')
 basin.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
-basin.df$method <- 'basin'
+basin.df$method <- 'Basin-clustered'
+basin.df1 <-lapply(pred.list, function(x) read.csv(x))
+basin.df1 <- lapply(basin.df1, transform, date = as.Date(date)) 
+#basin.df1 <- lapply(basin.df1, function(x) subset(x, x$date >= '2004-01-01' & x$date <= '2006-12-31'))
+basin.graph <- RegLine(ldply(basin.df1,data.frame), 'Basin-clustered')
+basin.graph[[2]]
 
-pred.list <- list.files(predDir,pattern=glob2rx('*shed*0.4*'))
-SW.list <-gsub("(_[a-z]).*","\\1",pred.list)
+pred.list <- list.files(predDir,pattern=glob2rx('*all*1*csv'))
+SW.list <- c('aarb_a', 'aarb_n', 'abrb_s','arb_b', 'arb_c', 'crb_a', 'crb_be', 
+             'crb_bu', 'crb_d', 'crb_j','crb_m', 'crb_p', 'crb_s', 
+             'crb_t', 'crb_u', 'mrb_s', 'prb_a', 'prb_b', 'prb_c', 
+             'prb_p', 'prb_r') 
+all.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
+all.df$method <- 'One-clustered'
+all.df1 <- lapply(pred.list, function(x) read.csv(x))
+all.df1 <- lapply(all.df1, transform, date = as.Date(date)) 
+all.df1 <- lapply(all.df1, function(x) subset(x, x$date >= '2004-01-01' & x$date <= '2005-12-31'))
+all.graph <- RegLine(ldply(all.df1, data.frame),'One-clustered')
+all.graph[[1]]
+
+ pred.list <- list.files(predDir,pattern=glob2rx('*shed*1*csv'))
 shed.df <- ldply(lapply(1:length(pred.list), function(x) Acc(read.csv(pred.list[[x]]),SW.list[[x]])), data.frame) 
-shed.df$method <- 'shed'
-
+shed.df$method <- 'Watershed-level'
+shed.df1 <- lapply(pred.list, function(x) read.csv(x))
+shed.graph <-  RegLine(ldply(shed.df1,data.frame),   'Watershed-level')
+shed.graph[[2]]
 
 all.pred <- left_join(all.df, pca.df, by = c('str'='str'))
 all.pred <- left_join(all.pred, basin.df, by = c('str'='str'))
-all.pred <- data.frame(all.df, pca.df,basin.df, shed.df)
-write.csv(all.pred, 'acc_40_bc.csv', row.names=F)
+all.pred <- data.frame(all.df, pca.df,basin.df,shed.df)
+write.csv(all.pred, 'acc_final_bc.csv', row.names=F)
+
+ggsave(plot=grid.arrange(pca.graph[[1]],all.graph[[1]],basin.graph[[1]],shed.graph[[1]], nrow=2, ncol=2),
+       filename='Q_test_multi_def.png',device='png', dpi=600, width = 12, height = 10, units='in' )
+ggsave(plot=grid.arrange(pca.graph[[2]],all.graph[[2]],basin.graph[[2]],shed.graph[[2]], nrow=2, ncol=2),
+       filename='Q_test_multi_bc.png',device='png', dpi=600, width = 12, height = 10, units='in' )       
+
+ggsave(plot=grid.arrange(pca.graph[[1]],all.graph[[1]],basin.graph[[1]], nrow=1, ncol=3),
+       filename='Q_loow_multi_def.png',device='png', dpi=600, width = 14, height = 5, units='in' )
+ggsave(plot=grid.arrange(pca.graph[[2]],all.graph[[2]],basin.graph[[2]], nrow=1, ncol=3),
+       filename='Q_loow_multi_bc.png',device='png', dpi=600, width = 14, height = 5, units='in' )       
+
+
+#summary stat
+all.pred <- rbind(all.df,pca.df,basin.df,shed.df)
+all.pred$R1 <- ifelse(all.pred$NSE1 <0, all.pred$R, all.pred$R1)
+all.pred$PBIAS1 <- ifelse(all.pred$NSE1 <0, all.pred$PBIAS, all.pred$PBIAS1)
+all.pred$RMSE1 <- ifelse(all.pred$NSE1 <0, all.pred$RMSE, all.pred$RMSE1)
+all.pred$NSE1 <- ifelse(all.pred$NSE1 <0, all.pred$NSE, all.pred$NSE1)
+
+p1 <- ggplot(aes(y = NSE1, x = method), data = all.pred) + geom_boxplot()+theme_bw()+
+  labs(x = 'Regionalization method',y='NSE') + theme(text = element_text(size=22))#,axis.text.x = element_text(angle = 45))
+p2 <- ggplot(aes(y = R1, x = method), data = all.pred) + geom_boxplot()+theme_bw()+
+  labs(x = 'Regionalization method',y=bquote(R^2)) + theme(text = element_text(size=22))
+p3 <- ggplot(aes(y = PBIAS1, x = method), data = all.pred) + geom_boxplot()+theme_bw()+
+  labs(x = 'Regionalization method',y='PBIAS (%)') + theme(text = element_text(size=22))
+p4 <- ggplot(aes(y = RMSE1, x = method), data = all.pred) + geom_boxplot()+theme_bw()+
+  labs(x = 'Regionalization method',y='R.RMSE (%)') + theme(text = element_text(size=22))
+
+ggsave(plot=grid.arrange(p1,p2,p3,p4, nrow=2, ncol=2),
+       filename='PaperFigure_SummaryStat.png',device='png', dpi=600, width = 18, height = 12, units='in' )
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## data frame one-time
-all.df <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/', 
+all.df <- ldply(lapply(1:21, function(x) read.csv(paste0('C:/StreamflowRF/results/', 
                             SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
-all.df.bc <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/validation_bc/', 
+all.df.bc <- ldply(lapply(1:21, function(x) read.csv(paste0('C:/StreamflowRF/results/validation_bc/', 
                                                          SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
 all.df.bc$predicted <- all.df$predicted - (all.df.bc$predicted - all.df$predicted)
 
-all.df.trim <- ldply(lapply(1:21, function(x) read.csv(paste0('D:/StreamflowRF/results/validation_trim/', 
+all.df.trim <- ldply(lapply(1:21, function(x) read.csv(paste0('C:/StreamflowRF/results/validation_trim/', 
                                                             SW.list[[x]],'_all_', calVal_ratio,'_pred.csv'))), data.frame)
 
 
