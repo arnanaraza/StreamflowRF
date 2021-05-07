@@ -1,15 +1,14 @@
 
 # Function to predict using RF model then 
-predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir) {
+predTest <- function (td=1, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year, tempo = 'monthly') {
   dir.create(predDir, showWarnings = FALSE)
+  df$date <- as.Date(df$date, format= "%Y-%m-%d")
   
   #prepare training-test data 
   set.seed(123)
   training <- subset(df, df$C.bname != basin)
-  training$date <- as.Date(training$date, format= "%Y-%m-%d")
   testing <- subset(df, df$C.bname == basin)
-  testing$date <- as.Date(testing$date, format= "%Y-%m-%d")
-  
+
   #create folds
   testing$year <- format(testing$date,"%Y") 
   na_obs <- testing %>% 
@@ -26,19 +25,16 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir) {
   
   for (i in 1:length(folds)){ #for every year!
     if(RFS=='shed'){
-      train <-  setdiff(test1,folds[[i]])#td for shed, extra td for others
-      test <- setdiff(test1,train)
-    #  train <-  rbind(train, sample_n(folds[[i]], nrow(folds[[i]])*0.05))
-
+      train <-  setdiff(test1,folds[[i]])#remove the year! 
     }else{
-      train <- rbind(training,setdiff(test1,folds[[i]]))#, sample_n(test1, nrow(test1)*0.05))
-      test <- folds[[i]]
+      train <- rbind(training,setdiff(test1,folds[[i]]))
     }
+    test <- folds[[i]]
     
-    train <- train[ , !(names(train) %in% c('date','C.bname'))]
+    train <- train[ , !(names(train) %in% c('C.bname','date'))]
     train[] <- sapply(train, as.numeric)
     date <- test$date
-    test <- test[ , !(names(test) %in% c('date','C.bname'))]
+    test <- test[ , !(names(test) %in% c('C.bname','date'))]
     test[] <- sapply(test, as.numeric)
     
     #model training and testing including bias correction

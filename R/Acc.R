@@ -1,5 +1,4 @@
 ### FUNCTION TO EXTRACT R2, NSE, AND PBIAS
-
 Acc <- function(df,str){
   rsq <- function (x, y) cor(x, y) ^ 2
   
@@ -17,6 +16,8 @@ Acc <- function(df,str){
   return(df1)
   
 }
+
+
 RegLine <- function(df, title){
   rsq <- function (x, y) cor(x, y) ^ 2
   

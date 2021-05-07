@@ -1,6 +1,6 @@
 
 # Function to predict using RF model then 
-predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) {
+predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year,tempo = 'mo') {
   dir.create(predDir, showWarnings = FALSE)
   
   #prepare training-test data 
@@ -14,9 +14,9 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) 
     train[] <- sapply(train, as.numeric)
     
     #test data
-      train.b <- read.csv(paste0(mainDir, '_Results/intermediate/VT/', basin, '.csv'))
-     samp <- floor((1-td)*nrow(train.b))
-     train_ind <- sample(seq_len(nrow(train.b)), size = samp)
+    train.b <- read.csv(paste0(mainDir, '_Results/intermediate/VT/', basin, '.csv'))
+    samp <- floor((1-td)*nrow(train.b))
+    train_ind <- sample(seq_len(nrow(train.b)), size = samp)
      
     test <- train.b[train_ind,]
     date <- test$date
@@ -68,7 +68,7 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) 
       train <- train[ , !(names(train) %in% c('date','C.bname'))]
       train[] <- sapply(train, as.numeric)
       
-      date <- test$date
+      date <- test$date 
       test <- test[ , !(names(test) %in% c('date','C.bname'))]
       test[] <- sapply(test, as.numeric)
       
@@ -96,13 +96,6 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) 
       date <- test$date
       test <- test[ , !(names(test) %in% c('date','C.bname'))]
       test[] <- sapply(test, as.numeric)
-      
-    #  train.control <- trainControl(method = "LOOCV")
-     # model <- train(O.obs ~., data = test, method = "ranger",
-      #               trControl = train.control)
-    #  print(model)
-      
-      
     }
     
   }
@@ -127,7 +120,6 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) 
   summary(lm(predicted_bc~observed,val.join))
   
   setwd(predDir)
-  
   save(RF,file =  paste0(basin,'_',RFS,'_',td,".RData"))
   write.csv(val.join, paste0(basin,'_',RFS,'_',td,'_pred.csv'), row.names=F)
   setwd(mainDir)
@@ -135,3 +127,21 @@ predTest <- function (td=0.6, df=mrb.VT, basin='mrb_s', RFS='all',predDir,year) 
   rm(RF,RF1,train,test)
   gc()
 }
+
+valYears <- function(df,year){
+  df$date <- as.Date(df$date, format= "%Y-%m-%d")
+
+  if(year == 56){df <- subset(df, df$date >= "2005-01-01" & df$date <= "2006-12-31")}
+  if(year == 23){df <- subset(df, df$date >= "2002-01-01" & df$date <= "2003-12-31")}    
+  if(year == 59){df <- subset(df, df$date >= "2005-01-01" & df$date <= "2005-12-31" | 
+                                  df$date >= "2009-01-01" & df$date <= "2009-12-31")}
+  if(year == 23){df <- subset(df, df$date >= "2002-01-01" & df$date <= "2003-12-31")}
+  if(year == 78){df <- subset(df, df$date >= "2007-01-01" & df$date <= "2008-12-31")}
+  if(year == 45){df <- subset(df, df$date >= "2004-01-01" & df$date <= "2005-12-31")}
+  if(year == 12){df <- subset(df, df$date >= "2001-01-01" & df$date <= "2002-12-31")}
+  if(year == 1){df <- subset(df, df$date >= "2000-01-01" & df$date <= "2001-12-31")}
+  df
+}
+
+  
+

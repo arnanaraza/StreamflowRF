@@ -66,7 +66,7 @@ BoxPlt1 <- function(df1,df2,df3,df4,shed_name,best){
   cols <- c("red", "blue")
   
   p <- ggplot(df, aes(x=month, y=SR)) + 
-    scale_colour_manual(name="Methods", values=cols,limits=c(unique(df$method)[1],'Bias-adjusted')) +
+    scale_colour_manual(name="method", values=cols,limits=c(unique(df$method)[1],'Bias-adjusted')) +
     geom_point(aes(colour = method), size=2.5)+
     theme_bw()+theme(legend.position = "none")+ggtitle(shed_name)+ 
     scale_x_continuous("Month", breaks=c(1:12)) +
@@ -78,7 +78,7 @@ BoxPlt1 <- function(df1,df2,df3,df4,shed_name,best){
           text = element_text(size=15))
   
   g=ggplot(df, aes(x=month, y=SR)) + 
-    scale_colour_manual(name="Methods", values=cols,limits=c('Best method','Bias-adjusted')) +
+    scale_colour_manual(name="method", values=cols,limits=c('Best method','Bias-adjusted')) +
     geom_point(aes(colour = method), size=2.5)+
     theme_bw()+theme(legend.position = "bottom")+ggtitle(shed_name)+ 
     scale_x_continuous("Month", breaks=c(1:12)) +
@@ -86,20 +86,21 @@ BoxPlt1 <- function(df1,df2,df3,df4,shed_name,best){
     geom_hline(yintercept=0, linetype="dashed", color = "black", size=0.75) + 
     theme(axis.ticks.x=element_blank(), 
           text = element_text(size=15))
-  plot(g)
   return(p)
   
 }
 
-best <- c(1,2,2,1,1,2,1,3,1,3,1,1,1,1,2,3,2,3,1,2,1)
+best.mod <- all.pred[,c()]
+
+best <- c(3,2,3,3,2,2,3,1,1,3,2,2,1,3,2,1,2,3,1,2,1) #########!!!!!!!!!!!!
 boxplt <- lapply(1:21, function(x) BoxPlt1(df.pca[[x]], df.basin[[x]], df.all[[x]],
                                             df.shed[[x]],SW.list[[x]], best[[x]]))
-
+setwd(predDir)
 ggsave( multiplot(boxplt[[1]], boxplt[[2]],boxplt[[3]], boxplt[[4]], boxplt[[5]],
                   boxplt[[6]], boxplt[[7]],boxplt[[8]], boxplt[[9]], boxplt[[10]],
                   boxplt[[11]], boxplt[[12]],boxplt[[13]], boxplt[[14]], boxplt[[15]],
                   boxplt[[16]], boxplt[[17]],boxplt[[18]], boxplt[[19]], boxplt[[20]],
-                  boxplt[[21]],cols=3),filename='PaperFigure_Season.png',device='png',
+                  boxplt[[21]],cols=3),filename='PaperFigure_Season1.png',device='png',
         dpi=600, width = 8, height = 16, units='in' )
 
 
